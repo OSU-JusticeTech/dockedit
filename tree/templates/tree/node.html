@@ -44,12 +44,12 @@
 <h3>skips</h3>
 
 {% for sk in skips %}
-    skip: {{ sk.item }}<br/>
+    skip: <a href="/admin/tree/entryskip/{{ sk.pk }}/change/">{{ sk.item }}</a><br/>
 {% endfor %}
 
 <h3>merges</h3>
 {% for m in merges %}
-    use: {{ m.item }}<br/>also for
+    use: <a href="/admin/tree/entrymerge/{{ m.pk }}/change/">{{ m.item }}</a><br/>also for
     <ul>
     {% for e in m.equals.all %}
         <li>{{ e.text }}</li>
