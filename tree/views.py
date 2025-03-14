@@ -43,15 +43,26 @@ def viewnode(request, path):
 
     G = get_tree()
     hist = []
+    node = None
     for p in path.split("/"):
         e = EntryText.objects.get(pk=int(p))
-        node = f"{','.join(hist)}-" + e.text
+        if node is None:
+            roots = [
+                no
+                for no, degree in G.in_degree()
+                if degree == 0 and G.nodes[no]["pk"] == int(p)
+            ]
+            assert len(roots) == 1
+            node = roots[0]
+        else:
+            for succ in G.successors(node):
+                if G.nodes[succ]["pk"] == int(p):
+                    node = succ
         prog.append(
             {"text": e, "path": "/".join(hist), "count": G.nodes[node]["count"]}
         )
         hist.append(str(e.pk))
 
-    node = f"{','.join(hist[:-1])}-" + e.text
     total = 0
     nodes = []
     for fr, to in sorted(
