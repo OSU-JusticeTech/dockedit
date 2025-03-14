@@ -1,3 +1,4 @@
+import time
 from collections import defaultdict
 
 import dockedit.settings
@@ -8,11 +9,16 @@ import networkx as nx
 from pydantic import TypeAdapter
 from tree.models import EntryText, EntrySkip, EntryMerge
 
-from copy import deepcopy
+# from copy import deepcopy, copy
+import copy
 
 
-def transform(T):
-    G = deepcopy(T)
+def transform(T, current_pos=None):
+    t_start = time.perf_counter()
+    print("start transform")
+    G = nx.DiGraph()
+    # G = T.copy() # deepcopy(T)
+    print("copy", time.perf_counter() - t_start)
 
     def cleanup_duplicates(n):
         # merge equal children
@@ -29,27 +35,52 @@ def transform(T):
                     node_name = no["node_name"]
                     one_down = list(G.successors(node_name))
                     G.nodes[li[0]["node_name"]]["count"] += G.nodes[node_name]["count"]
-                    G.nodes[li[0]["node_name"]]["cases"] += G.nodes[node_name]["cases"]
+                    old_list = copy.copy(G.nodes[li[0]["node_name"]]["cases"])
+                    G.nodes[li[0]["node_name"]]["cases"] = (
+                        old_list + G.nodes[node_name]["cases"]
+                    )
                     G.remove_node(node_name)
                     for to in one_down:
                         G.add_edge(li[0]["node_name"], to)
 
+    merges = EntryMerge.objects.all()
+    skips = EntrySkip.objects.all()
+
+    def copy_part(n):
+        if n not in G.nodes:
+            G.add_node(n)
+            G.nodes[n]["count"] = T.nodes[n]["count"]
+            G.nodes[n]["label"] = T.nodes[n]["label"]
+            if "cases" in G.nodes[n]:
+                G.nodes[n]["cases"] = copy.copy(T.nodes[n]["cases"])
+            G.nodes[n]["pk"] = T.nodes[n]["pk"]
+        for fr, to in T.out_edges(n):
+            if not G.has_edge(fr, to):
+                G.add_edge(fr, to)
+                G.nodes[to]["count"] = T.nodes[to]["count"]
+                G.nodes[to]["label"] = T.nodes[to]["label"]
+                G.nodes[to]["cases"] = copy.copy(T.nodes[to]["cases"])
+                G.nodes[to]["pk"] = T.nodes[to]["pk"]
+
     def apply_transform(n, path):
         # print("applying transform", n, path)
-        if len(path) > 4:
-            pass
-            # return
+        if current_pos is not None and len(path) > len(current_pos) + 2:
+            # pass
+            return
+
+        copy_part(n)
         done_skip = False
         while not done_skip:
             done_skip = True
             for succ in list(G.successors(n)):
                 succpk = G.nodes[succ]["pk"]
                 skipthis = False
-                for sk in EntrySkip.objects.all():
+                for sk in skips:
                     if path == sk.path and succpk == sk.item.pk:
                         print("this successor should be skipped")
                         skipthis = True
                 if skipthis:
+                    copy_part(succ)
                     one_down = list(G.successors(succ))
                     G.remove_node(succ)
                     for to in one_down:
@@ -58,7 +89,7 @@ def transform(T):
 
         cleanup_duplicates(n)
         # merge speced nodes:
-        for me in EntryMerge.objects.all():
+        for me in merges:
             if path == me.path:
                 children = {}
                 for succ in G.successors(n):
@@ -69,13 +100,22 @@ def transform(T):
                         print("try ", eq, children[eq], list(G.successors(n)))
                         if children[eq] in list(G.successors(n)):
                             print("is in list", eq, children[eq])
+                            copy_part(children[eq])
+
                             one_down = list(G.successors(children[eq]))
+                            print(
+                                "update count",
+                                G.nodes[children[me.item.pk]]["count"],
+                                "with ",
+                                G.nodes[children[eq]]["count"],
+                            )
                             G.nodes[children[me.item.pk]]["count"] += G.nodes[
                                 children[eq]
                             ]["count"]
-                            G.nodes[children[me.item.pk]]["cases"] += G.nodes[
-                                children[eq]
-                            ]["cases"]
+                            old_list = copy.copy(G.nodes[children[me.item.pk]]["cases"])
+                            G.nodes[children[me.item.pk]]["cases"] = (
+                                old_list + G.nodes[children[eq]]["cases"]
+                            )
                             G.remove_node(children[eq])
                             for to in one_down:
                                 G.add_edge(children[me.item.pk], to)
@@ -87,15 +127,17 @@ def transform(T):
             succpk = G.nodes[succ]["pk"]
             apply_transform(succ, path + [succpk])
 
-    nodes_no_incoming = [node for node, degree in G.in_degree() if degree == 0]
+    nodes_no_incoming = [node for node, degree in T.in_degree() if degree == 0]
     for node in nodes_no_incoming:
         # each tree
-        apply_transform(node, [G.nodes[node]["pk"]])
+        apply_transform(node, [T.nodes[node]["pk"]])
+    print("full trans", time.perf_counter() - t_start)
     return G
 
 
 def get_cases():
     if "cases" not in dockedit.settings.TREE:
+        print("reload all cases")
         CaseList = TypeAdapter(list[Case])
 
         # with open("data/sample.json") as f:
@@ -103,15 +145,19 @@ def get_cases():
             raw = json.load(f)
             cases = CaseList.validate_python(raw)
         dockedit.settings.TREE["cases"] = cases
+        print("cases loaded")
         return cases
     else:
         return dockedit.settings.TREE["cases"]
 
 
-def get_tree():
-    if isinstance(dockedit.settings.TREE, dict) and len(dockedit.settings.TREE) == 0:
+def get_tree(current_pos=None):
+    if (
+        isinstance(dockedit.settings.TREE, dict)
+        and "data" not in dockedit.settings.TREE
+    ):
         cases = get_cases()
-
+        print("reload tree")
         TREE = nx.DiGraph()
 
         def inc_node(name):
@@ -155,8 +201,8 @@ def get_tree():
                 case_node(tonode, case.case_number)
 
         dockedit.settings.TREE["data"] = TREE
-
+        print("tree loaded")
     else:
         TREE = dockedit.settings.TREE["data"]
     # return TREE
-    return transform(TREE)
+    return transform(TREE, current_pos)

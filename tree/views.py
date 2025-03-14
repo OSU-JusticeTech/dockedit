@@ -44,7 +44,7 @@ def count_branch_nodes(G, root):
 def viewnode(request, path):
     prog = []
 
-    G = get_tree()
+    G = get_tree(current_pos=list(map(int, path.split("/"))))
     hist = []
     node = None
     intp = []
