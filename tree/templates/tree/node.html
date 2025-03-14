@@ -20,20 +20,19 @@
 <tr>
 <td><a href="{% url "viewnode" path=path %}{{ node.db.pk }}">{{ node.db.text }}</a></td>
 <td>{{ node.count }}</td>
-<td>{{ node.graph }}</td>
 </tr>
 {% endfor %}
 <tr>
     <td>total:</td>
     <th>{{ total }}</th>
 </tr>
+{% if ended > 0 %}
 <tr>
     <td>end:</td>
-    <th>{{ ended }}</th>
+    <th><a href="{% url "cases" path=path %}?ended=1">{{ ended }}</a></th>
 </tr>
+{% endif %}
 </table>
-
-decision nodes below: {{ tree_size }}
 
 <h3>skips</h3>
 {% for sk in skips %}
@@ -42,7 +41,7 @@ decision nodes below: {{ tree_size }}
 
 <h3>merges</h3>
 {% for m in merges %}
-    use: {{ m.item }}<br/>for
+    use: {{ m.item }}<br/>also for
     <ul>
     {% for e in m.equals.all %}
         <li>{{ e.text }}</li>

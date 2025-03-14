@@ -4,8 +4,6 @@ from django.shortcuts import render
 from tree.models import EntryText, EntrySkip, EntryMerge
 from tree.utils import get_tree, get_cases
 
-import networkx as nx
-
 
 @staff_member_required
 def roots(request):
@@ -25,19 +23,6 @@ def roots(request):
         total += G.nodes[node]["count"]
 
     return render(request, "tree/roots.html", {"nodes": nodes, "total": total})
-
-
-def count_branch_nodes(G, root):
-    # Extract the subtree (all reachable nodes from the root)
-    subtree = nx.descendants(G, root) | {root}
-
-    # Count nodes with more than 1 successor
-    branch_count = 0
-    for node in subtree:
-        if len(list(G.successors(node))) > 1:
-            branch_count += 1
-
-    return branch_count
 
 
 @staff_member_required
@@ -88,8 +73,6 @@ def viewnode(request, path):
         total += G.nodes[to]["count"]
     ended = G.nodes[node]["count"] - total
 
-    tree_size = 0  # count_branch_nodes(G, node)
-
     return render(
         request,
         "tree/node.html",
@@ -99,7 +82,6 @@ def viewnode(request, path):
             "nodes": nodes,
             "ended": ended,
             "total": total,
-            "tree_size": tree_size,
             "skips": EntrySkip.objects.filter(path=intp),
             "merges": EntryMerge.objects.filter(path=intp),
         },
@@ -131,9 +113,15 @@ def cases(request, path):
         )
         hist.append(str(e.pk))
 
-    print(G.nodes[node]["cases"])
+    # print(G.nodes[node]["cases"])
     rel = list(filter(lambda x: x.case_number in G.nodes[node]["cases"], get_cases()))
-    # print(rel)
+    only_ended = request.GET.get("ended", False)
+    if only_ended:
+        cont = set()
+        for succ in G.successors(node):
+            cont.update(G.nodes[succ]["cases"])
+
+        rel = list(filter(lambda x: x.case_number not in cont, rel))
 
     def transpose_respect_longest(lst):
         # Find the maximum length of the lists
