@@ -17,11 +17,11 @@ Including another URLconf
 # from debug_toolbar.toolbar import debug_toolbar_urls
 from django.contrib import admin
 from django.urls import path
-from tree.views import roots, viewnode, cases
+from tree.views import roots, NodeView, cases
 
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("tree", roots, name="root"),
-    path("tree/<path:path>/", viewnode, name="viewnode"),
+    path("tree/<path:path>/", NodeView.as_view(), name="viewnode"),
     path("cases/<path:path>/", cases, name="cases"),
 ]  # + debug_toolbar_urls()

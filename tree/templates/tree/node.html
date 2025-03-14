@@ -11,13 +11,18 @@
     {% endfor %}
 </table>
 
+<form method="post">
+{% csrf_token %}
 <table>
 <tr>
+    <th></th>
     <th>label</th>
     <th># cases</th>
 </tr>
 {% for node in nodes %}
 <tr>
+<td>{{ node.field }}</td>
+<td><input type="submit" name="merge_{{ node.db.pk }}" value="merge" /></td>
 <td><a href="{% url "viewnode" path=path %}{{ node.db.pk }}">{{ node.db.text }}</a></td>
 <td>{{ node.count }}</td>
 </tr>
@@ -33,10 +38,13 @@
 </tr>
 {% endif %}
 </table>
+<input type="submit" name="skip" value="skip" />
+</form>
 
 <h3>skips</h3>
+
 {% for sk in skips %}
-    skip: {{ sk.item }}
+    skip: {{ sk.item }}<br/>
 {% endfor %}
 
 <h3>merges</h3>
