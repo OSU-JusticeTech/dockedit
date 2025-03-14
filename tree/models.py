@@ -4,7 +4,7 @@ from django.db import models
 
 
 class EntryText(models.Model):
-    text = models.TextField()
+    text = models.CharField(max_length=400)
 
     def __str__(self):
         return self.text

@@ -25,6 +25,26 @@ def transform(T):
 
     assert len(merge) > 0
 
+    def cleanup_duplicates(n):
+        # merge equal children
+        children = defaultdict(list)
+        for succ in G.successors(n):
+            children[G.nodes[succ]["pk"]].append(
+                {"node_name": succ, "count": G.nodes[succ]["count"]}
+            )
+        for ch in children.values():
+            if len(ch) > 1:
+                # print("ch", ch)
+                li = sorted(ch, key=lambda x: x["count"], reverse=True)
+                for no in li[1:]:
+                    node_name = no["node_name"]
+                    one_down = list(G.successors(node_name))
+                    G.nodes[li[0]["node_name"]]["count"] += G.nodes[node_name]["count"]
+                    G.nodes[li[0]["node_name"]]["cases"] += G.nodes[node_name]["cases"]
+                    G.remove_node(node_name)
+                    for to in one_down:
+                        G.add_edge(li[0]["node_name"], to)
+
     def apply_transform(n, path):
         # print("applying transform", n, path)
         if len(path) > 4:
@@ -44,26 +64,33 @@ def transform(T):
                 for to in one_down:
                     G.add_edge(n, to)
 
-        # merge equal nodes
-        children = defaultdict(list)
-        for succ in G.successors(n):
-            children[G.nodes[succ]["pk"]].append(
-                {"node_name": succ, "count": G.nodes[succ]["count"]}
-            )
-        for ch in children.values():
-            if len(ch) > 1:
-                print("ch", ch)
-                li = sorted(ch, key=lambda x: x["count"], reverse=True)
-                for no in li[1:]:
-                    node_name = no["node_name"]
-                    one_down = list(G.successors(node_name))
-                    G.nodes[li[0]["node_name"]]["count"] += G.nodes[node_name]["count"]
-                    G.nodes[li[0]["node_name"]]["cases"] += G.nodes[node_name]["cases"]
-                    G.remove_node(node_name)
-                    for to in one_down:
-                        G.add_edge(li[0]["node_name"], to)
-
+        cleanup_duplicates(n)
         # merge speced nodes:
+        for me in merge:
+            if path == me["path"]:
+                children = {}
+                for succ in G.successors(n):
+                    children[G.nodes[succ]["pk"]] = succ
+                if me["item"] in children:
+                    print("merge ", children)
+                    for eq in me["equal"]:
+                        print("try ", eq, children[eq], list(G.successors(n)))
+                        if children[eq] in list(G.successors(n)):
+                            print("is in list", eq, children[eq])
+                            one_down = list(G.successors(children[eq]))
+                            G.nodes[children[me["item"]]]["count"] += G.nodes[
+                                children[eq]
+                            ]["count"]
+                            G.nodes[children[me["item"]]]["cases"] += G.nodes[
+                                children[eq]
+                            ]["cases"]
+                            G.remove_node(children[eq])
+                            for to in one_down:
+                                G.add_edge(children[me["item"]], to)
+
+        cleanup_duplicates(n)
+
+        # recurse:
         for succ in G.successors(n):
             succpk = G.nodes[succ]["pk"]
             apply_transform(succ, path + [succpk])

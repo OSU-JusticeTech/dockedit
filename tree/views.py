@@ -1,3 +1,4 @@
+from django.contrib.admin.views.decorators import staff_member_required
 from django.shortcuts import render
 
 from tree.models import EntryText
@@ -6,6 +7,7 @@ from tree.utils import get_tree, get_cases
 import networkx as nx
 
 
+@staff_member_required
 def roots(request):
     G = get_tree()
 
@@ -38,6 +40,7 @@ def count_branch_nodes(G, root):
     return branch_count
 
 
+@staff_member_required
 def viewnode(request, path):
     prog = []
 
@@ -99,6 +102,7 @@ def viewnode(request, path):
     )
 
 
+@staff_member_required
 def cases(request, path):
     prog = []
     G = get_tree()
