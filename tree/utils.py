@@ -17,9 +17,9 @@ def transform(T):
     skip = [{"path": [1, 2], "item": 3}]  # IMAGE OF NOTICE OF COURT APPEARANCE
     merge = [
         {
-            "path": [1, 2, 3, 4, 5, 6, 5, 7, 5, 8],
-            "items": [17, 27],
-            "name": "MERGED PRECIPE FOR RESTITUTION AND SETOUT",
+            "path": [1, 2, 4, 5, 7, 5, 6, 5, 8],
+            "item": 9,
+            "equal": [15],
         }
     ]
 
@@ -58,10 +58,12 @@ def transform(T):
                     node_name = no["node_name"]
                     one_down = list(G.successors(node_name))
                     G.nodes[li[0]["node_name"]]["count"] += G.nodes[node_name]["count"]
+                    G.nodes[li[0]["node_name"]]["cases"] += G.nodes[node_name]["cases"]
                     G.remove_node(node_name)
                     for to in one_down:
                         G.add_edge(li[0]["node_name"], to)
 
+        # merge speced nodes:
         for succ in G.successors(n):
             succpk = G.nodes[succ]["pk"]
             apply_transform(succ, path + [succpk])
@@ -73,13 +75,22 @@ def transform(T):
     return G
 
 
-def get_tree():
-    if isinstance(dockedit.settings.TREE, dict) and len(dockedit.settings.TREE) == 0:
+def get_cases():
+    if "cases" not in dockedit.settings.TREE:
         CaseList = TypeAdapter(list[Case])
 
         with open("data/sample.json") as f:
             raw = json.load(f)
             cases = CaseList.validate_python(raw)
+        dockedit.settings.TREE["cases"] = cases
+        return cases
+    else:
+        return dockedit.settings.TREE["cases"]
+
+
+def get_tree():
+    if isinstance(dockedit.settings.TREE, dict) and len(dockedit.settings.TREE) == 0:
+        cases = get_cases()
 
         TREE = nx.DiGraph()
 
@@ -89,6 +100,13 @@ def get_tree():
             if "count" not in TREE.nodes[name]:
                 TREE.nodes[name]["count"] = 0
             TREE.nodes[name]["count"] += 1
+
+        def case_node(name, cno):
+            if name not in TREE.nodes:
+                TREE.add_node(name, cases=[])
+            if "cases" not in TREE.nodes[name]:
+                TREE.nodes[name]["cases"] = []
+            TREE.nodes[name]["cases"].append(cno)
 
         all_texts = set()
         for case in cases:
@@ -114,8 +132,10 @@ def get_tree():
                 TREE.nodes[tonode]["label"] = to
                 TREE.nodes[tonode]["pk"] = mapping[to]
                 inc_node(tonode)
+                case_node(tonode, case.case_number)
 
         dockedit.settings.TREE["data"] = TREE
+
     else:
         TREE = dockedit.settings.TREE["data"]
     # return TREE

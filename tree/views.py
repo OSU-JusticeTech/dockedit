@@ -1,7 +1,7 @@
 from django.shortcuts import render
 
 from tree.models import EntryText
-from tree.utils import get_tree
+from tree.utils import get_tree, get_cases
 
 import networkx as nx
 
@@ -59,7 +59,11 @@ def viewnode(request, path):
                 if G.nodes[succ]["pk"] == int(p):
                     node = succ
         prog.append(
-            {"text": e, "path": "/".join(hist), "count": G.nodes[node]["count"]}
+            {
+                "text": e,
+                "path": "/".join(hist + [str(G.nodes[node]["pk"])]),
+                "count": G.nodes[node]["count"],
+            }
         )
         hist.append(str(e.pk))
 
@@ -91,5 +95,58 @@ def viewnode(request, path):
             "ended": ended,
             "total": total,
             "tree_size": tree_size,
+        },
+    )
+
+
+def cases(request, path):
+    prog = []
+    G = get_tree()
+    hist = []
+    node = None
+    for p in path.split("/"):
+        e = EntryText.objects.get(pk=int(p))
+        if node is None:
+            roots = [
+                no
+                for no, degree in G.in_degree()
+                if degree == 0 and G.nodes[no]["pk"] == int(p)
+            ]
+            assert len(roots) == 1
+            node = roots[0]
+        else:
+            for succ in G.successors(node):
+                if G.nodes[succ]["pk"] == int(p):
+                    node = succ
+        prog.append(
+            {"text": e, "path": "/".join(hist), "count": G.nodes[node]["count"]}
+        )
+        hist.append(str(e.pk))
+
+    print(G.nodes[node]["cases"])
+    rel = list(filter(lambda x: x.case_number in G.nodes[node]["cases"], get_cases()))
+    # print(rel)
+
+    def transpose_respect_longest(lst):
+        # Find the maximum length of the lists
+        max_len = max(len(sublist) for sublist in lst)
+
+        # Transpose while filling missing values with None
+        transposed = [
+            [lst[i][j] if j < len(lst[i]) else None for i in range(len(lst))]
+            for j in range(max_len)
+        ]
+
+        return transposed
+
+    tr = transpose_respect_longest([list(reversed(c.docket)) for c in rel])
+    return render(
+        request,
+        "tree/cases.html",
+        {
+            "prog": prog,
+            "path": path,
+            "dockets": tr,
+            "cases": [c.case_number for c in rel],
         },
     )

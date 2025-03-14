@@ -4,7 +4,7 @@
     <tr>
         <td>{{ forloop.counter }}</td>
         <td>{% if p.path %}<a href="{% url "viewnode" path=p.path %}">{% else %}<a href="{% url "root" %}">{% endif %}{{ p.text.text }}</a></td>
-        <td>{{ p.count }}</td>
+        <td>{% if p.path and p.count < 50 %}<a href="{% url "cases" path=p.path %}">{{ p.count }}</a>{% else %}{{ p.count }}{% endif %}</td>
     </tr>
     {% endfor %}
 </table>

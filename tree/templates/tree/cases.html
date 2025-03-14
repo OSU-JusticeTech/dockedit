@@ -1,0 +1,25 @@
+<table>
+
+    {% for p in prog %}
+    <tr>
+        <td>{{ forloop.counter }}</td>
+        <td>{% if p.path %}<a href="{% url "viewnode" path=p.path %}">{% else %}<a href="{% url "root" %}">{% endif %}{{ p.text.text }}</a></td>
+        <td>{{ p.count }}</td>
+    </tr>
+    {% endfor %}
+</table>
+
+<table>
+    <tr>
+        {% for c in cases %}
+            <td>{{ c }}</td>
+        {% endfor %}
+    </tr>
+    {% for row in dockets %}
+        <tr>
+        {% for e in row %}
+            <td><b>{{ e.text }}</b><br/>{{ e.extra }}</td>
+            {% endfor %}
+        </tr>
+    {% endfor %}
+</table>
