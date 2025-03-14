@@ -6,24 +6,13 @@ import json
 from tree.pyschema import Case
 import networkx as nx
 from pydantic import TypeAdapter
-from tree.models import EntryText
+from tree.models import EntryText, EntrySkip, EntryMerge
 
 from copy import deepcopy
 
 
 def transform(T):
     G = deepcopy(T)
-
-    skip = [{"path": [1, 2], "item": 3}]  # IMAGE OF NOTICE OF COURT APPEARANCE
-    merge = [
-        {
-            "path": [1, 2, 4, 5, 7, 5, 6, 5, 8],
-            "item": 9,
-            "equal": [15],
-        }
-    ]
-
-    assert len(merge) > 0
 
     def cleanup_duplicates(n):
         # merge equal children
@@ -50,43 +39,46 @@ def transform(T):
         if len(path) > 4:
             pass
             # return
-
-        for succ in list(G.successors(n)):
-            succpk = G.nodes[succ]["pk"]
-            skipthis = False
-            for sk in skip:
-                if path == sk["path"] and succpk == sk["item"]:
-                    print("this successor should be skipped")
-                    skipthis = True
-            if skipthis:
-                one_down = list(G.successors(succ))
-                G.remove_node(succ)
-                for to in one_down:
-                    G.add_edge(n, to)
+        done_skip = False
+        while not done_skip:
+            done_skip = True
+            for succ in list(G.successors(n)):
+                succpk = G.nodes[succ]["pk"]
+                skipthis = False
+                for sk in EntrySkip.objects.all():
+                    if path == sk.path and succpk == sk.item.pk:
+                        print("this successor should be skipped")
+                        skipthis = True
+                if skipthis:
+                    one_down = list(G.successors(succ))
+                    G.remove_node(succ)
+                    for to in one_down:
+                        G.add_edge(n, to)
+                    done_skip = False
 
         cleanup_duplicates(n)
         # merge speced nodes:
-        for me in merge:
-            if path == me["path"]:
+        for me in EntryMerge.objects.all():
+            if path == me.path:
                 children = {}
                 for succ in G.successors(n):
                     children[G.nodes[succ]["pk"]] = succ
-                if me["item"] in children:
+                if me.item.pk in children:
                     print("merge ", children)
-                    for eq in me["equal"]:
+                    for eq in me.equals.values_list("pk", flat=True):
                         print("try ", eq, children[eq], list(G.successors(n)))
                         if children[eq] in list(G.successors(n)):
                             print("is in list", eq, children[eq])
                             one_down = list(G.successors(children[eq]))
-                            G.nodes[children[me["item"]]]["count"] += G.nodes[
+                            G.nodes[children[me.item.pk]]["count"] += G.nodes[
                                 children[eq]
                             ]["count"]
-                            G.nodes[children[me["item"]]]["cases"] += G.nodes[
+                            G.nodes[children[me.item.pk]]["cases"] += G.nodes[
                                 children[eq]
                             ]["cases"]
                             G.remove_node(children[eq])
                             for to in one_down:
-                                G.add_edge(children[me["item"]], to)
+                                G.add_edge(children[me.item.pk], to)
 
         cleanup_duplicates(n)
 
@@ -106,7 +98,8 @@ def get_cases():
     if "cases" not in dockedit.settings.TREE:
         CaseList = TypeAdapter(list[Case])
 
-        with open("data/sample.json") as f:
+        # with open("data/sample.json") as f:
+        with open("data/cases.json") as f:
             raw = json.load(f)
             cases = CaseList.validate_python(raw)
         dockedit.settings.TREE["cases"] = cases

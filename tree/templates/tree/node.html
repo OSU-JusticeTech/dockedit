@@ -32,3 +32,18 @@
 </table>
 
 decision nodes below: {{ tree_size }}
+
+<h3>skips</h3>
+{% for sk in skips %}
+    skip: {{ sk.item }}
+{% endfor %}
+
+<h3>merges</h3>
+{% for m in merges %}
+    use: {{ m.item }}<br/>for
+    <ul>
+    {% for e in m.equals.all %}
+        <li>{{ e.text }}</li>
+        {% endfor %}
+    </ul>
+{% endfor %}

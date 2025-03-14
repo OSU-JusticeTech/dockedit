@@ -1,7 +1,7 @@
 from django.contrib.admin.views.decorators import staff_member_required
 from django.shortcuts import render
 
-from tree.models import EntryText
+from tree.models import EntryText, EntrySkip, EntryMerge
 from tree.utils import get_tree, get_cases
 
 import networkx as nx
@@ -47,7 +47,9 @@ def viewnode(request, path):
     G = get_tree()
     hist = []
     node = None
+    intp = []
     for p in path.split("/"):
+        intp.append(int(p))
         e = EntryText.objects.get(pk=int(p))
         if node is None:
             roots = [
@@ -86,7 +88,7 @@ def viewnode(request, path):
         total += G.nodes[to]["count"]
     ended = G.nodes[node]["count"] - total
 
-    tree_size = count_branch_nodes(G, node)
+    tree_size = 0  # count_branch_nodes(G, node)
 
     return render(
         request,
@@ -98,6 +100,8 @@ def viewnode(request, path):
             "ended": ended,
             "total": total,
             "tree_size": tree_size,
+            "skips": EntrySkip.objects.filter(path=intp),
+            "merges": EntryMerge.objects.filter(path=intp),
         },
     )
 
