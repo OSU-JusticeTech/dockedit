@@ -10,18 +10,26 @@ from tree.models import EntryText
 
 from copy import deepcopy
 
-def transform(T):
 
+def transform(T):
     G = deepcopy(T)
 
-    skip = [{"path": [1,2], "item": 3}] #IMAGE OF NOTICE OF COURT APPEARANCE
-    merge = [{"path":[1,2,3,4,5,6,5,7,5,8], "items":[17,27], "name": "MERGED PRECIPE FOR RESTITUTION AND SETOUT"}]
+    skip = [{"path": [1, 2], "item": 3}]  # IMAGE OF NOTICE OF COURT APPEARANCE
+    merge = [
+        {
+            "path": [1, 2, 3, 4, 5, 6, 5, 7, 5, 8],
+            "items": [17, 27],
+            "name": "MERGED PRECIPE FOR RESTITUTION AND SETOUT",
+        }
+    ]
+
+    assert len(merge) > 0
 
     def apply_transform(n, path):
-        #print("applying transform", n, path)
+        # print("applying transform", n, path)
         if len(path) > 4:
             pass
-            #return
+            # return
 
         for succ in list(G.successors(n)):
             succpk = G.nodes[succ]["pk"]
@@ -39,11 +47,13 @@ def transform(T):
         # merge equal nodes
         children = defaultdict(list)
         for succ in G.successors(n):
-            children[G.nodes[succ]["pk"]].append({"node_name": succ,"count": G.nodes[succ]["count"]})
+            children[G.nodes[succ]["pk"]].append(
+                {"node_name": succ, "count": G.nodes[succ]["count"]}
+            )
         for ch in children.values():
             if len(ch) > 1:
                 print("ch", ch)
-                li = sorted(ch, key=lambda x:x["count"], reverse=True)
+                li = sorted(ch, key=lambda x: x["count"], reverse=True)
                 for no in li[1:]:
                     node_name = no["node_name"]
                     one_down = list(G.successors(node_name))
@@ -65,7 +75,6 @@ def transform(T):
 
 def get_tree():
     if isinstance(dockedit.settings.TREE, dict) and len(dockedit.settings.TREE) == 0:
-
         CaseList = TypeAdapter(list[Case])
 
         with open("data/sample.json") as f:
@@ -95,9 +104,9 @@ def get_tree():
             hist = []
             inc_node("-" + fwd_docket[0])
             for fr, to in zip(fwd_docket, fwd_docket[1:]):
-                frnode = f"{",".join(hist)}-" + fr
+                frnode = f"{','.join(hist)}-" + fr
                 hist.append(str(mapping[fr]))
-                tonode = f"{",".join(hist)}-" + to
+                tonode = f"{','.join(hist)}-" + to
                 # print(frnode, tonode)
                 TREE.add_edge(frnode, tonode)
                 TREE.nodes[frnode]["label"] = fr
@@ -109,5 +118,5 @@ def get_tree():
         dockedit.settings.TREE["data"] = TREE
     else:
         TREE = dockedit.settings.TREE["data"]
-    #return TREE
+    # return TREE
     return transform(TREE)

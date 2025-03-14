@@ -17,9 +17,9 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 from tree.views import roots, viewnode
-    
+
 urlpatterns = [
-    path('admin/', admin.site.urls),
-    path("tree", roots, name="root" ),
-    path('tree/<path:path>/', viewnode, name='viewnode'),
+    path("admin/", admin.site.urls),
+    path("tree", roots, name="root"),
+    path("tree/<path:path>/", viewnode, name="viewnode"),
 ]
