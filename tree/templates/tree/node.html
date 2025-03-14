@@ -1,0 +1,34 @@
+<table>
+
+    {% for p in prog %}
+    <tr>
+        <td>{{ forloop.counter }}</td>
+        <td>{% if p.path %}<a href="{% url "viewnode" path=p.path %}">{% else %}<a href="{% url "root" %}">{% endif %}{{ p.text.text }}</a></td>
+        <td>{{ p.count }}</td>
+    </tr>
+    {% endfor %}
+</table>
+
+<table>
+<tr>
+    <th>label</th>
+    <th># cases</th>
+</tr>
+{% for node in nodes %}
+<tr>
+<td><a href="{% url "viewnode" path=path %}{{ node.db.pk }}">{{ node.db.text }}</a></td>
+<td>{{ node.count }}</td>
+<td>{{ node.graph }}</td>
+</tr>
+{% endfor %}
+<tr>
+    <td>total:</td>
+    <th>{{ total }}</th>
+</tr>
+<tr>
+    <td>end:</td>
+    <th>{{ ended }}</th>
+</tr>
+</table>
+
+decision nodes below: {{ tree_size }}

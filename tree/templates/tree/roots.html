@@ -5,7 +5,7 @@
 </tr>
 {% for node in nodes %}
 <tr>
-<td>{{ node.db.text }}</td>
+<td><a href="{% url "viewnode" path=node.db.pk %}">{{ node.db.text }}</a></td>
 <td>{{ node.count }}</td>
 </tr>
 {% endfor %}
