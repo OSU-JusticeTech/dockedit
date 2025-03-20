@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "tree.apps.TreeConfig",
+    "pinch.apps.PinchConfig",
     #    "debug_toolbar",
 ]
 

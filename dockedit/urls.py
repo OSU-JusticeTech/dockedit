@@ -16,7 +16,7 @@ Including another URLconf
 """
 # from debug_toolbar.toolbar import debug_toolbar_urls
 from django.contrib import admin
-from django.urls import path
+from django.urls import path, include
 from tree.views import roots, NodeView, cases
 
 urlpatterns = [
@@ -24,4 +24,5 @@ urlpatterns = [
     path("tree", roots, name="root"),
     path("tree/<path:path>/", NodeView.as_view(), name="viewnode"),
     path("cases/<path:path>/", cases, name="cases"),
+    path("pinch/", include("pinch.urls")),
 ]  # + debug_toolbar_urls()
