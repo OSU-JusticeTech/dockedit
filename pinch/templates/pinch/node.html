@@ -1,5 +1,6 @@
 <html>
 <body>
+<form method="get" action="{% url "pinch:pinch" %}" >
 <table>
     <tr>
         <td><a href="{% url "pinch:root" %}">Root</a></td>
@@ -7,12 +8,14 @@
     {% for p in prog %}
     <tr>
         <td>{{ forloop.counter }}</td>
+        <td><input type="checkbox" name="{{ forloop.counter0 }}_{{ p.obj.pk }}" /> </td>
         <td>{% if p.path %}<a href="{% url "pinch:node" path=p.path %}">{% else %}<a href="{% url "pinch:root" %}">{% endif %}{{ p.obj.text }}</a></td>
         <td>{% if p.path and p.count < 50 %}<a href="{% url "cases" path=p.path %}">{{ p.count }}</a>{% else %}{{ p.count }}{% endif %}</td>
     </tr>
     {% endfor %}
 </table>
-
+<input type="submit" />
+</form>
 <table>
 <tr>
     <th>label</th>

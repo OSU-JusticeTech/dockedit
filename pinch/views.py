@@ -1,9 +1,13 @@
+from collections import defaultdict
+
 from django import views
 from django.contrib.admin.views.decorators import staff_member_required
 from django.shortcuts import render
 from django.utils.decorators import method_decorator
 
 from pinch.utils import get_tree
+from tree.models import EntryText
+from tree.utils import get_cases, transpose_respect_longest
 
 
 # Create your views here.
@@ -92,3 +96,76 @@ class NodeView(views.View):
                 "total": total,
             },
         )
+
+
+def split_by_elements(A, B):
+    # Initialize variables to keep track of the current split start and the result
+    result = []
+    start = 0
+
+    # Iterate through elements of A to find their positions in B
+    for element in A:
+        # Find the next occurrence of the element in B after 'start' index
+        try:
+            index = B.index(element, start)
+        except ValueError:
+            return None  # In case one of the elements in A is not found in B
+
+        # Append the segment of B from 'start' to this index (exclusive)
+        result.append(B[start:index])
+
+        # Update the start index for the next segment to be after the found element
+        start = index + 1
+
+    # After the loop, add the remaining elements of B after the last element of A
+    result.append(B[start:])
+
+    return result
+
+
+@staff_member_required
+def pinch(request):
+    print("get req", request.GET)
+    points = []
+    for r, val in request.GET.items():
+        print(r, val)
+        if val == "on":
+            try:
+                x = tuple(map(int, r.split("_")))
+                points.append({"pos": x[0], "obj": EntryText.objects.get(pk=x[1])})
+            except Exception as e:
+                print(e.__repr__())
+                pass
+    points = sorted(points, key=lambda p: p["pos"])
+    cases = get_cases()
+
+    contains = [p["obj"].text for p in points]
+
+    c = {i: defaultdict(int) for i, _ in enumerate(contains)}
+    c[-1] = defaultdict(int)
+
+    for case in cases:
+        it = [entry.text for entry in reversed(case.docket)]
+        # print([item in it for item in seqences[variant]["docket"]])
+        # contains = [item in it for item in seqences[variant]["docket"]]
+        # vals = [o or n for o,n in zip(vals,contains)]
+        # continue
+        res = split_by_elements(contains, it)
+        if res is not None:
+            # print(contains)
+            # print(res)
+            for i, el in enumerate(res):
+                # if len(el) > 0:
+                c[i - 1][tuple(el)] += 1
+            # break
+
+    full = [list(c[-1].items())]
+    for i, p in enumerate(points):
+        full.append([p])
+        full.append(sorted(list(c[i].items()), key=lambda p: p[1], reverse=True))
+
+    # print(full)
+
+    tr = transpose_respect_longest(full)
+
+    return render(request, "pinch/pinch.html", {"table": tr})

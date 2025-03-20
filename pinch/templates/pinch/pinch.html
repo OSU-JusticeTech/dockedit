@@ -1,0 +1,10 @@
+<table>
+    {% for row in table %}
+        <tr>
+            {% for el in row %}
+                <td>{% if el.obj %}<b>{{ el.obj.text }}</b>{% else %}
+                    {% if el %}<b>{{ el.1 }}: </b>{{ el.0|join:"<br/>"|default:"direct" }}{% endif %}{% endif %}</td>
+            {% endfor %}
+        </tr>
+    {% endfor %}
+</table>

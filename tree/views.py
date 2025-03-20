@@ -5,7 +5,7 @@ from django.utils.decorators import method_decorator
 
 from tree.models import EntryText, EntrySkip, EntryMerge
 from tree.forms import NodeForm
-from tree.utils import get_tree, get_cases
+from tree.utils import get_tree, get_cases, transpose_respect_longest
 
 
 @staff_member_required
@@ -159,18 +159,6 @@ def cases(request, path):
             cont.update(G.nodes[succ]["cases"])
 
         rel = list(filter(lambda x: x.case_number not in cont, rel))
-
-    def transpose_respect_longest(lst):
-        # Find the maximum length of the lists
-        max_len = max(len(sublist) for sublist in lst)
-
-        # Transpose while filling missing values with None
-        transposed = [
-            [lst[i][j] if j < len(lst[i]) else None for i in range(len(lst))]
-            for j in range(max_len)
-        ]
-
-        return transposed
 
     tr = transpose_respect_longest([list(reversed(c.docket)) for c in rel])
     return render(

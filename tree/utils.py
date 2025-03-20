@@ -206,3 +206,16 @@ def get_tree(current_pos=None):
         TREE = dockedit.settings.TREE["data"]
     # return TREE
     return transform(TREE, current_pos)
+
+
+def transpose_respect_longest(lst):
+    # Find the maximum length of the lists
+    max_len = max(len(sublist) for sublist in lst)
+
+    # Transpose while filling missing values with None
+    transposed = [
+        [lst[i][j] if j < len(lst[i]) else None for i in range(len(lst))]
+        for j in range(max_len)
+    ]
+
+    return transposed
