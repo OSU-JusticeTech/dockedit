@@ -159,10 +159,35 @@ def pinch(request):
                 c[i - 1][tuple(el)] += 1
             # break
 
-    full = [list(c[-1].items())]
+    mapping = {}
+    for e in EntryText.objects.all():
+        mapping[e.text] = e
+
+    hist = 0
+    full = [
+        [
+            ([(mapping[entry], hist + hist_add) for hist_add, entry in enumerate(p)], c)
+            for p, c in c[-1].items()
+        ]
+    ]
+    hist += 100
     for i, p in enumerate(points):
         full.append([p])
-        full.append(sorted(list(c[i].items()), key=lambda p: p[1], reverse=True))
+        # full.append()
+        hist += 200
+        sorted_inbetween = sorted(list(c[i].items()), key=lambda p: p[1], reverse=True)
+        full.append(
+            [
+                (
+                    [
+                        (mapping[entry], hist + hist_add)
+                        for hist_add, entry in enumerate(p)
+                    ],
+                    c,
+                )
+                for p, c in sorted_inbetween
+            ]
+        )
 
     # print(full)
 
