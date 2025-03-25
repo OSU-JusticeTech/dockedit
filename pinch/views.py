@@ -182,7 +182,11 @@ def pinch(request):
         full.append([p])
         # full.append()
         hist += 200
-        sorted_inbetween = sorted(list(c[i].items()), key=lambda p: p[1], reverse=True)
+        sorted_inbetween = sorted(
+            list(zip(c[i].items(), sel_case[i].items())),
+            key=lambda p: p[0][1],
+            reverse=True,
+        )
         full.append(
             [
                 (
@@ -191,8 +195,9 @@ def pinch(request):
                         for hist_add, entry in enumerate(p)
                     ],
                     c,
+                    [case.case_number for case in sel],
                 )
-                for p, c in sorted_inbetween
+                for (p, c), (_, sel) in sorted_inbetween
             ]
         )
 
@@ -210,7 +215,7 @@ def cases(request):
     tr = transpose_respect_longest([list(reversed(c.docket)) for c in rel])
     return render(
         request,
-        "tree/cases.html",
+        "pinch/cases.html",
         {
             "dockets": tr,
             "cases": [c.case_number for c in rel],

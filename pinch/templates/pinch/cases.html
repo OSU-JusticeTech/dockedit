@@ -1,15 +1,15 @@
 <html>
 <body>
-<table style="overflow-x: auto;" border="1">
+<table style="overflow-x: auto;">
     <tr>
         {% for c in cases %}
-            <td  style="min-width: 500px;">{{ c }}</td>
+            <td  style="min-width: 300px;">{{ c }}</td>
         {% endfor %}
     </tr>
     {% for row in dockets %}
         <tr>
         {% for e in row %}
-            <td style="min-width: 500px;"><b>{{ e.text }}</b><br/>{{ e.extra }}</td>
+            <td><b>{{ e.text }}</b><br/>{{ e.extra }}</td>
             {% endfor %}
         </tr>
     {% endfor %}
