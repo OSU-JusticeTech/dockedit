@@ -143,6 +143,8 @@ def pinch(request):
 
     c = {i: defaultdict(int) for i, _ in enumerate(contains)}
     c[-1] = defaultdict(int)
+    sel_case = {i: defaultdict(list) for i, _ in enumerate(contains)}
+    sel_case[-1] = defaultdict(list)
 
     for case in cases:
         it = [entry.text for entry in reversed(case.docket)]
@@ -157,6 +159,7 @@ def pinch(request):
             for i, el in enumerate(res):
                 # if len(el) > 0:
                 c[i - 1][tuple(el)] += 1
+                sel_case[i - 1][tuple(el)].append(case)
             # break
 
     mapping = {}
@@ -166,8 +169,12 @@ def pinch(request):
     hist = 0
     full = [
         [
-            ([(mapping[entry], hist + hist_add) for hist_add, entry in enumerate(p)], c)
-            for p, c in c[-1].items()
+            (
+                [(mapping[entry], hist + hist_add) for hist_add, entry in enumerate(p)],
+                c,
+                [case.case_number for case in sel],
+            )
+            for (p, c), (_, sel) in zip(c[-1].items(), sel_case[-1].items())
         ]
     ]
     hist += 100
@@ -194,3 +201,18 @@ def pinch(request):
     tr = transpose_respect_longest(full)
 
     return render(request, "pinch/pinch.html", {"table": tr})
+
+
+@staff_member_required
+def cases(request):
+    rel = list(filter(lambda x: x.case_number in request.GET.keys(), get_cases()))
+
+    tr = transpose_respect_longest([list(reversed(c.docket)) for c in rel])
+    return render(
+        request,
+        "tree/cases.html",
+        {
+            "dockets": tr,
+            "cases": [c.case_number for c in rel],
+        },
+    )
