@@ -24,5 +24,6 @@ urlpatterns = [
     path("tree", roots, name="root"),
     path("tree/<path:path>/", NodeView.as_view(), name="viewnode"),
     path("cases/<path:path>/", cases, name="cases"),
+    path("group/", include("group.urls")),
     path("pinch/", include("pinch.urls")),
 ]  # + debug_toolbar_urls()

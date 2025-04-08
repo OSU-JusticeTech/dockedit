@@ -1,0 +1,43 @@
+<html>
+<body>
+<form method="get" action="{% url "group:pinch" %}" >
+<table>
+    <tr>
+        <td><a href="{% url "group:root" %}">Root</a></td>
+    </tr>
+    {% for p in prog %}
+    <tr>
+        <td>{{ forloop.counter }}</td>
+        <td><input type="checkbox" name="{{ forloop.counter0 }}_{{ p.obj.pk }}" /> </td>
+        <td>{% if p.path %}<a href="{% url "group:node" path=p.path %}">{% else %}<a href="{% url "group:root" %}">{% endif %}{{ p.obj.text }}</a></td>
+        <td>{% if p.path and p.count < 50 %}<a href="{% url "cases" path=p.path %}">{{ p.count }}</a>{% else %}{{ p.count }}{% endif %}</td>
+    </tr>
+    {% endfor %}
+</table>
+<input type="submit" />
+</form>
+<table>
+<tr>
+    <th>label</th>
+    <th># cases</th>
+</tr>
+{% for node in nodes %}
+<tr>
+<td><a href="{% url "group:node" path=path %}{{ node.obj.pk }}">{{ node.obj.text }}</a></td>
+<td>{{ node.count }}</td>
+</tr>
+{% endfor %}
+<tr>
+    <td>total:</td>
+    <th>{{ total }}</th>
+</tr>
+{% if ended > 0 %}
+<tr>
+    <td>end:</td>
+    <th><a href="{% url "cases" path=path %}?ended=1">{{ ended }}</a></th>
+</tr>
+{% endif %}
+</table>
+
+</body>
+</html>

@@ -1,0 +1,16 @@
+<table>
+<tr>
+    <th>label</th>
+    <th># cases</th>
+</tr>
+{% for node in nodes %}
+<tr>
+<td><a href="{% url "group:node" path=node.obj.pk %}">{{ node.obj.text }}</a></td>
+<td>{{ node.count }}</td>
+</tr>
+{% endfor %}
+<tr>
+    <td></td>
+    <th>{{ total }}</th>
+</tr>
+</table>

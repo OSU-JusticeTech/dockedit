@@ -1,0 +1,18 @@
+<html>
+<body>
+<table style="overflow-x: auto;">
+    <tr>
+        {% for c in cases %}
+            <td  style="min-width: 300px;">{{ c }}</td>
+        {% endfor %}
+    </tr>
+    {% for row in dockets %}
+        <tr>
+        {% for e in row %}
+            <td><b>{{ e.text }}</b><br/>{{ e.extra }}</td>
+            {% endfor %}
+        </tr>
+    {% endfor %}
+</table>
+</body>
+</html>

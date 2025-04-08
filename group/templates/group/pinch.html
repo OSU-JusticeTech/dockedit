@@ -1,0 +1,20 @@
+<form  method="get" action="{% url "group:pinch" %}" >
+<input type="submit" />
+<table border="1" style="overflow-x: auto;">
+    {% for row in table %}
+        <tr>
+            {% for el in row %}
+                <td style="min-width: 200px;">{% if el.obj %}<b><input type="checkbox" checked="checked" name="{% widthratio forloop.counter 1 100 %}_{{ el.obj.pk }}" /> {{ el.obj.text }}</b>{% else %}
+                    {% if el %}<b>{% if el.2|length < 50 %}<a href="{% url "group:cases" %}?{{ el.2|join:"&" }}">{{ el.1 }}</a>{% else %}{{ el.1 }}{% endif %} </b>
+                        {% for e in el.0 %}
+                            <input type="checkbox" name="{{ e.1 }}_{{ e.0.pk }}" /> {{ e.0.text }}<br>
+                        {%  empty %}
+                            direct
+                        {% endfor %}
+                        {% endif %}
+                    {% endif %}</td>
+            {% endfor %}
+        </tr>
+    {% endfor %}
+</table>
+</form>
