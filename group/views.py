@@ -191,12 +191,18 @@ def pinch(request):
 
     grouping = {k: v[1:] if v.startswith("🌱") else v for k, v in rgrouping.items()}
 
+    rdays = [[] for _ in enumerate(contains)]
+    fdays = [[] for _ in enumerate(contains)]
+
     for case in cases:
         it = [
             grouping[entry.text]
             for entry in reversed(case.docket)
             if entry.text in grouping
         ]
+        it_full = [entry for entry in reversed(case.docket) if entry.text in grouping]
+        # print("it_full", it_full)
+        file_date = it_full[0].date
         # print([item in it for item in seqences[variant]["docket"]])
         # contains = [item in it for item in seqences[variant]["docket"]]
         # vals = [o or n for o,n in zip(vals,contains)]
@@ -205,12 +211,27 @@ def pinch(request):
         if res is not None:
             # print(contains)
             # print(res)
+
+            pos = 0
+            prev_date = file_date
+            for i, sub in enumerate(res[:-1]):
+                pos += len(sub)
+                # print("get", pos)
+                found_elem = it_full[pos]
+                pos += 1
+                # print(found_elem)
+                rdays[i].append((found_elem.date - prev_date).days)
+                prev_date = found_elem.date
+                fdays[i].append((found_elem.date - file_date).days)
+
             for i, el in enumerate(res):
                 # if len(el) > 0:
                 c[i - 1][tuple(el)] += 1
                 sel_case[i - 1][tuple(el)].append(case)
             # break
 
+    # print("rdays", rdays)
+    # print("fdays", fdays)
     mapping = {}
     for e in EntryText.objects.all():
         mapping[e.text] = e
@@ -227,8 +248,44 @@ def pinch(request):
         ]
     ]
     hist += 100
+    hist_idx = 0
     for i, p in enumerate(points):
-        full.append([p])
+        fig = go.Figure(data=[go.Histogram(x=rdays[hist_idx])])
+        fig.update_layout(
+            width=300,  # Width in pixels
+            height=100,  # Height in pixels
+            margin=dict(
+                l=0,  # Left margin
+                r=0,  # Right margin
+                b=0,  # Bottom margin
+                t=0,  # Top margin
+            ),
+        )
+        graph_div = plotly.offline.plot(
+            fig,
+            auto_open=False,
+            output_type="div",
+        )
+
+        figf = go.Figure(data=[go.Histogram(x=fdays[hist_idx])])
+        figf.update_layout(
+            width=300,  # Width in pixels
+            height=100,  # Height in pixels
+            margin=dict(
+                l=0,  # Left margin
+                r=0,  # Right margin
+                b=0,  # Bottom margin
+                t=0,  # Top margin
+            ),
+        )
+        graph_divf = plotly.offline.plot(
+            figf,
+            auto_open=False,
+            output_type="div",
+        )
+
+        full.append([p, {"hist": graph_div}, {"hist": graph_divf}])
+        hist_idx += 1
         # full.append()
         hist += 200
         sorted_inbetween = sorted(
