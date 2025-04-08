@@ -10,6 +10,8 @@ from group.utils import get_tree
 from tree.models import EntryText
 from tree.utils import get_cases, transpose_respect_longest
 
+import plotly.offline
+import plotly.graph_objects as go
 
 # Create your views here.
 
@@ -77,15 +79,49 @@ class NodeView(views.View):
         for fr, to in sorted(
             G.out_edges(node), key=lambda x: len(G.nodes[x[1]]["cases"]), reverse=True
         ):
+            fig = go.Figure(data=[go.Histogram(x=G.nodes[to]["rdays"])])
+            fig.update_layout(
+                width=300,  # Width in pixels
+                height=100,  # Height in pixels
+                margin=dict(
+                    l=0,  # Left margin
+                    r=0,  # Right margin
+                    b=0,  # Bottom margin
+                    t=0,  # Top margin
+                ),
+            )
+            graph_div = plotly.offline.plot(
+                fig,
+                auto_open=False,
+                output_type="div",
+            )
+            figf = go.Figure(data=[go.Histogram(x=G.nodes[to]["fdays"])])
+            figf.update_layout(
+                width=300,  # Width in pixels
+                height=100,  # Height in pixels
+                margin=dict(
+                    l=0,  # Left margin
+                    r=0,  # Right margin
+                    b=0,  # Bottom margin
+                    t=0,  # Top margin
+                ),
+            )
+            graph_divf = plotly.offline.plot(
+                figf,
+                auto_open=False,
+                output_type="div",
+            )
             nodes.append(
                 {
                     "count": len(G.nodes[to]["cases"]),
                     "graph": to,
                     "obj": G.nodes[to]["obj"],
+                    "rhist": graph_div,
+                    "fhist": graph_divf,
                 }
             )
             total += len(G.nodes[to]["cases"])
-        ended = 0
+        ended = -1
         if to is not None:
             ended = len(G.nodes[to]["cases"]) - total
 
