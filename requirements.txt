@@ -1,3 +1,4 @@
 Django
 networkx
 pydantic
+plotly

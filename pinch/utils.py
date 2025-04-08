@@ -14,12 +14,15 @@ def get_tree():
         print("reload pinch tree")
         TREE = nx.DiGraph()
 
-        def case_node(name, case):
+        def case_node(name, case, days=0):
             if name not in TREE.nodes:
                 TREE.add_node(name, cases=[])
             if "cases" not in TREE.nodes[name]:
                 TREE.nodes[name]["cases"] = []
+            if "rdays" not in TREE.nodes[name]:
+                TREE.nodes[name]["rdays"] = []
             TREE.nodes[name]["cases"].append(case)
+            TREE.nodes[name]["rdays"].append(days)
 
         all_texts = set()
         for case in cases:
@@ -31,10 +34,13 @@ def get_tree():
             mapping[t] = EntryText.objects.get_or_create(text=t)[0]
 
         for case in cases:
-            fwd_docket = list(map(lambda x: x.text, reversed(case.docket)))
+            # fwd_docket = list(map(lambda x: x.text, reversed(case.docket)))
+            fwd_docket = list(reversed(case.docket))
             hist = []
-            case_node("-" + fwd_docket[0], case)
-            for fr, to in zip(fwd_docket, fwd_docket[1:]):
+            case_node("-" + fwd_docket[0].text, case)
+            for fro, too in zip(fwd_docket, fwd_docket[1:]):
+                fr = fro.text
+                to = too.text
                 frnode = f"{','.join(hist)}-" + fr
                 hist.append(str(mapping[fr].pk))
                 tonode = f"{','.join(hist)}-" + to
@@ -44,7 +50,7 @@ def get_tree():
                 TREE.nodes[frnode]["obj"] = mapping[fr]
                 TREE.nodes[tonode]["label"] = to
                 TREE.nodes[tonode]["obj"] = mapping[to]
-                case_node(tonode, case)
+                case_node(tonode, case, (too.date - fro.date).days)
 
         dockedit.settings.TREE["pinch"] = TREE
         print("pinch tree loaded")
