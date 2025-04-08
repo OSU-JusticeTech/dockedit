@@ -14,15 +14,18 @@ def get_tree():
         print("reload pinch tree")
         TREE = nx.DiGraph()
 
-        def case_node(name, case, days=0):
+        def case_node(name, case, rdays=0, fdays=0):
             if name not in TREE.nodes:
                 TREE.add_node(name, cases=[])
             if "cases" not in TREE.nodes[name]:
                 TREE.nodes[name]["cases"] = []
             if "rdays" not in TREE.nodes[name]:
                 TREE.nodes[name]["rdays"] = []
+            if "fdays" not in TREE.nodes[name]:
+                TREE.nodes[name]["fdays"] = []
             TREE.nodes[name]["cases"].append(case)
-            TREE.nodes[name]["rdays"].append(days)
+            TREE.nodes[name]["rdays"].append(rdays)
+            TREE.nodes[name]["fdays"].append(fdays)
 
         all_texts = set()
         for case in cases:
@@ -38,6 +41,7 @@ def get_tree():
             fwd_docket = list(reversed(case.docket))
             hist = []
             case_node("-" + fwd_docket[0].text, case)
+            file_date = fwd_docket[0].date
             for fro, too in zip(fwd_docket, fwd_docket[1:]):
                 fr = fro.text
                 to = too.text
@@ -50,7 +54,12 @@ def get_tree():
                 TREE.nodes[frnode]["obj"] = mapping[fr]
                 TREE.nodes[tonode]["label"] = to
                 TREE.nodes[tonode]["obj"] = mapping[to]
-                case_node(tonode, case, (too.date - fro.date).days)
+                case_node(
+                    tonode,
+                    case,
+                    (too.date - fro.date).days,
+                    (too.date - file_date).days,
+                )
 
         dockedit.settings.TREE["pinch"] = TREE
         print("pinch tree loaded")

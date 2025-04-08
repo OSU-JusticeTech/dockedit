@@ -26,6 +26,7 @@
 <td><a href="{% url "pinch:node" path=path %}{{ node.obj.pk }}">{{ node.obj.text }}</a></td>
 <td>{{ node.count }}</td>
 <td>{{ node.rhist | safe }}</td>
+<td>{{ node.fhist | safe }}</td>
 </tr>
 {% endfor %}
 <tr>

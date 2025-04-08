@@ -74,6 +74,7 @@ class NodeView(views.View):
 
         total = 0
         nodes = []
+        to = None
         for fr, to in sorted(
             G.out_edges(node), key=lambda x: len(G.nodes[x[1]]["cases"]), reverse=True
         ):
@@ -93,16 +94,35 @@ class NodeView(views.View):
                 auto_open=False,
                 output_type="div",
             )
+            figf = go.Figure(data=[go.Histogram(x=G.nodes[to]["fdays"])])
+            figf.update_layout(
+                width=300,  # Width in pixels
+                height=100,  # Height in pixels
+                margin=dict(
+                    l=0,  # Left margin
+                    r=0,  # Right margin
+                    b=0,  # Bottom margin
+                    t=0,  # Top margin
+                ),
+            )
+            graph_divf = plotly.offline.plot(
+                figf,
+                auto_open=False,
+                output_type="div",
+            )
             nodes.append(
                 {
                     "count": len(G.nodes[to]["cases"]),
                     "graph": to,
                     "obj": G.nodes[to]["obj"],
                     "rhist": graph_div,
+                    "fhist": graph_divf,
                 }
             )
             total += len(G.nodes[to]["cases"])
-        ended = len(G.nodes[to]["cases"]) - total
+        ended = -1
+        if to is not None:
+            ended = len(G.nodes[to]["cases"]) - total
 
         return render(
             request,
