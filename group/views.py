@@ -1,3 +1,4 @@
+import json
 from collections import defaultdict
 
 from django import views
@@ -72,6 +73,7 @@ class NodeView(views.View):
 
         total = 0
         nodes = []
+        to = None
         for fr, to in sorted(
             G.out_edges(node), key=lambda x: len(G.nodes[x[1]]["cases"]), reverse=True
         ):
@@ -83,7 +85,9 @@ class NodeView(views.View):
                 }
             )
             total += len(G.nodes[to]["cases"])
-        ended = len(G.nodes[to]["cases"]) - total
+        ended = 0
+        if to is not None:
+            ended = len(G.nodes[to]["cases"]) - total
 
         return render(
             request,
@@ -146,8 +150,17 @@ def pinch(request):
     sel_case = {i: defaultdict(list) for i, _ in enumerate(contains)}
     sel_case[-1] = defaultdict(list)
 
+    with open("data/groups.json") as f:
+        rgrouping = json.load(f)
+
+    grouping = {k: v[1:] if v.startswith("🌱") else v for k, v in rgrouping.items()}
+
     for case in cases:
-        it = [entry.text for entry in reversed(case.docket)]
+        it = [
+            grouping[entry.text]
+            for entry in reversed(case.docket)
+            if entry.text in grouping
+        ]
         # print([item in it for item in seqences[variant]["docket"]])
         # contains = [item in it for item in seqences[variant]["docket"]]
         # vals = [o or n for o,n in zip(vals,contains)]

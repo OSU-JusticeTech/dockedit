@@ -1,3 +1,5 @@
+import json
+
 import networkx as nx
 
 import dockedit
@@ -30,11 +32,29 @@ def get_tree():
         for t in all_texts:
             mapping[t] = EntryText.objects.get_or_create(text=t)[0]
 
+        for e in EntryText.objects.all():
+            mapping[e.text] = e
+
+        with open("data/groups.json") as f:
+            grouping = json.load(f)
+
         for case in cases:
-            fwd_docket = list(map(lambda x: x.text, reversed(case.docket)))
+            # fwd_docket = list(filter(lambda x: x in grouping, map(lambda x: x.text, reversed(case.docket))))
+            fwd_docket = [
+                grouping[entry.text]
+                for entry in reversed(case.docket)
+                if entry.text in grouping
+            ]
             hist = []
-            case_node("-" + fwd_docket[0], case)
+            rootname = fwd_docket[0]
+            if rootname.startswith("🌱"):
+                rootname = rootname[1:]
+            case_node("-" + rootname, case)
             for fr, to in zip(fwd_docket, fwd_docket[1:]):
+                if fr.startswith("🌱"):
+                    fr = fr[1:]
+                if to.startswith("🌱"):
+                    to = to[1:]
                 frnode = f"{','.join(hist)}-" + fr
                 hist.append(str(mapping[fr].pk))
                 tonode = f"{','.join(hist)}-" + to

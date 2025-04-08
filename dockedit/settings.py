@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "tree.apps.TreeConfig",
     "pinch.apps.PinchConfig",
+    "group.apps.GroupConfig",
     #    "debug_toolbar",
 ]
 
